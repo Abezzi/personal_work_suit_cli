@@ -1,0 +1,58 @@
+[
+  {
+    "id": 1,
+    "name": "Chip",
+    "category": "cats",
+    "age": 4,
+    "created_at": "2020-09-01T12:00:00Z"
+  },
+  {
+    "id": 2,
+    "name": "Nacho",
+    "category": "cats",
+    "age": 6,
+    "created_at": "2020-08-20T12:00:00Z"
+  },
+  {
+    "id": 3,
+    "name": "Taco",
+    "category": "dogs",
+    "age": 3,
+    "created_at": "2019-03-16T12:00:00Z"
+  },
+  {
+    "id": 4,
+    "name": "Pepper",
+    "category": "cats",
+    "age": 2,
+    "created_at": "2019-05-22T12:00:00Z"
+  },
+  {
+    "id": 5,
+    "name": "Minka",
+    "category": "cats",
+    "age": 6,
+    "created_at": "2020-11-23T12:00:00Z"
+  },
+  {
+    "id": 2296074,
+    "name": "2e7HzqHfKg",
+    "category": "cats",
+    "age": 10,
+    "created_at": "2024-01-01T22:33:57.580741700Z"
+  },
+  {
+    "id": 7372637,
+    "name": "DwdIQGzYEZ",
+    "category": "cats",
+    "age": 2,
+    "created_at": "2024-01-01T22:33:59.298490100Z"
+  },
+  {
+    "id": 4898836,
+    "name": "fuSHaNKMtl",
+    "category": "cats",
+    "age": 2,
+    "created_at": "2024-01-01T22:46:27.188309700Z"
+  }
+]
