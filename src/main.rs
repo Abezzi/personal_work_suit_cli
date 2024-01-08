@@ -58,6 +58,7 @@ enum MenuItem {
     Home,
     Todos,
     Timers,
+    TimeTracking,
 }
 
 impl From<MenuItem> for usize {
@@ -66,6 +67,7 @@ impl From<MenuItem> for usize {
             MenuItem::Home => 0,
             MenuItem::Todos => 1,
             MenuItem::Timers => 2,
+            MenuItem::TimeTracking => 3,
         }
     }
 }
@@ -101,7 +103,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = Terminal::new(backend)?;
     terminal.clear()?;
 
-    let menu_titles = vec!["Home", "Todos", "Timers", "Quit"];
+    let menu_titles = vec!["Home", "Todos", "Timers", "TimeTracking", "Quit"];
     let mut active_menu_item = MenuItem::Home;
     let mut pet_list_state = ListState::default();
     pet_list_state.select(Some(0));
@@ -139,12 +141,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .map(|t| {
                     let (first, rest) = t.split_at(1);
                     let (second, other_rest) = rest.split_at(1);
+                    let (third, other_other_rest) = other_rest.split_at(1);
 
-                    // println!("first: {}", first);
-                    //
-                    // for hotkey in hotkey_set.iter() {
-                    //     println!("hotkey: {hotkey}");
-                    // }
+                    // TODO: ugly code
 
                     if !hotkey_set.contains(first) {
                         hotkey_set.insert(first);
@@ -157,7 +156,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                             ),
                             Span::styled(rest, Style::default().fg(Color::White)),
                         ])
-                    } else {
+                    } else if !hotkey_set.contains(second) {
                         hotkey_set.insert(second);
                         Spans::from(vec![
                             Span::styled(first, Style::default().fg(Color::White)),
@@ -168,6 +167,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     .add_modifier(Modifier::UNDERLINED),
                             ),
                             Span::styled(other_rest, Style::default().fg(Color::White)),
+                        ])
+                    } else {
+                        hotkey_set.insert(third);
+                        Spans::from(vec![
+                            Span::styled(first, Style::default().fg(Color::White)),
+                            Span::styled(second, Style::default().fg(Color::White)),
+                            Span::styled(
+                                third,
+                                Style::default()
+                                    .fg(Color::Yellow)
+                                    .add_modifier(Modifier::UNDERLINED),
+                            ),
+                            Span::styled(other_other_rest, Style::default().fg(Color::White)),
                         ])
                     }
                 })
@@ -205,6 +217,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // rect.render_stateful_widget(left, pets_chunks[0], &mut pet_list_state);
                     // rect.render_widget(right, pets_chunks[1]);
                 }
+                MenuItem::TimeTracking => {}
             }
             rect.render_widget(copyright, chunks[2]);
         })?;
@@ -219,6 +232,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 KeyCode::Char('h') => active_menu_item = MenuItem::Home,
                 KeyCode::Char('t') => active_menu_item = MenuItem::Todos,
                 KeyCode::Char('i') => active_menu_item = MenuItem::Timers,
+                KeyCode::Char('m') => active_menu_item = MenuItem::TimeTracking,
                 // KeyCode::Char('a') => {
                 //     add_random_pet_to_db().expect("can add new random pet");
                 // }
@@ -267,7 +281,7 @@ fn render_home<'a>() -> Paragraph<'a> {
         )]),
         Spans::from(vec![Span::raw("")]),
         Spans::from(vec![Span::raw(
-            "Press 't' to access To-Do and 'i' to access timers.",
+            "Press 't' to access To-Do, 'i' to access timers and 'm' to check time tracking.",
         )]),
     ])
     .alignment(Alignment::Center)
