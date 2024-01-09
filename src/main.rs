@@ -206,16 +206,50 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             match active_menu_item {
                 MenuItem::Home => rect.render_widget(render_home(), chunks[1]),
                 MenuItem::Todos => {
-                    let todos_chunks = Layout::default()
+                    // chunk 0 vertical layout{
+                    //    horizontal layout
+                    // }
+                    let todos_vertical_chunks = Layout::default()
                         .direction(Direction::Vertical)
                         .constraints(
-                            [Constraint::Percentage(20), Constraint::Percentage(80)].as_ref(),
+                            [Constraint::Percentage(80), Constraint::Percentage(20)].as_ref(),
                         )
                         .split(chunks[1]);
+
+                    let todos_horizontal_chunks = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .constraints(
+                            [
+                                Constraint::Percentage(33),
+                                Constraint::Percentage(33),
+                                Constraint::Percentage(33),
+                            ]
+                            .as_ref(),
+                        )
+                        .split(todos_vertical_chunks[0]);
+
                     let (todo_list, doing_list, done_list, details_table) =
                         render_todos(&todo_list_state);
-                    rect.render_stateful_widget(todo_list, todos_chunks[0], &mut todo_list_state);
-                    rect.render_widget(details_table, todos_chunks[1]);
+
+                    rect.render_stateful_widget(
+                        todo_list,
+                        todos_horizontal_chunks[0],
+                        &mut todo_list_state,
+                    );
+
+                    rect.render_stateful_widget(
+                        doing_list,
+                        todos_horizontal_chunks[1],
+                        &mut todo_list_state,
+                    );
+
+                    rect.render_stateful_widget(
+                        done_list,
+                        todos_horizontal_chunks[2],
+                        &mut todo_list_state,
+                    );
+
+                    rect.render_widget(details_table, todos_vertical_chunks[1]);
                 }
                 MenuItem::Timers => {
                     // let pets_chunks = Layout::default()
@@ -510,7 +544,6 @@ fn render_todos<'a>(todo_list_state: &ListState) -> (List<'a>, List<'a>, List<'a
         Constraint::Percentage(20), // title
         Constraint::Percentage(20), // description
         Constraint::Percentage(20), // category
-        // Constraint::Percentage(5), // age
         Constraint::Percentage(20), // date
     ]);
 
