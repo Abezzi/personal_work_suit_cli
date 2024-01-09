@@ -46,10 +46,13 @@ struct Timer {
     created_at: DateTime<Utc>,
 }
 
+#[derive(Serialize, Deserialize, Clone)]
 struct Todo {
     id: usize,
-    name: String,
+    title: String,
+    description: String,
     category: String,
+    status: TodoStatus,
     created_at: DateTime<Utc>,
 }
 
@@ -59,6 +62,13 @@ enum MenuItem {
     Todos,
     Timers,
     TimeTracking,
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+enum TodoStatus {
+    Todo,
+    Done,
+    Doing,
 }
 
 impl From<MenuItem> for usize {
@@ -105,8 +115,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let menu_titles = vec!["Home", "Todos", "Timers", "TimeTracking", "Quit"];
     let mut active_menu_item = MenuItem::Home;
-    let mut pet_list_state = ListState::default();
-    pet_list_state.select(Some(0));
+    let mut todo_list_state = ListState::default();
+    todo_list_state.select(Some(0));
 
     loop {
         terminal.draw(|rect| {
@@ -196,15 +206,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             match active_menu_item {
                 MenuItem::Home => rect.render_widget(render_home(), chunks[1]),
                 MenuItem::Todos => {
-                    // let pets_chunks = Layout::default()
-                    //     .direction(Direction::Horizontal)
-                    //     .constraints(
-                    //         [Constraint::Percentage(20), Constraint::Percentage(80)].as_ref(),
-                    //     )
-                    //     .split(chunks[1]);
-                    // let (left, right) = render_pets(&pet_list_state);
-                    // rect.render_stateful_widget(left, pets_chunks[0], &mut pet_list_state);
-                    // rect.render_widget(right, pets_chunks[1]);
+                    let todos_chunks = Layout::default()
+                        .direction(Direction::Horizontal)
+                        .constraints(
+                            [Constraint::Percentage(20), Constraint::Percentage(80)].as_ref(),
+                        )
+                        .split(chunks[1]);
+                    let (left, right) = render_todos(&todo_list_state);
+                    rect.render_stateful_widget(left, todos_chunks[0], &mut todo_list_state);
+                    rect.render_widget(right, todos_chunks[1]);
                 }
                 MenuItem::Timers => {
                     // let pets_chunks = Layout::default()
@@ -239,26 +249,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 // KeyCode::Char('d') => {
                 //     remove_pet_at_index(&mut pet_list_state).expect("can remove pet");
                 // }
-                // KeyCode::Char('j') => {
-                //     if let Some(selected) = pet_list_state.selected() {
-                //         let amount_pets = read_db().expect("can fetch pet list").len();
-                //         if selected >= amount_pets - 1 {
-                //             pet_list_state.select(Some(0));
-                //         } else {
-                //             pet_list_state.select(Some(selected + 1));
-                //         }
-                //     }
-                // }
-                // KeyCode::Char('k') => {
-                //     if let Some(selected) = pet_list_state.selected() {
-                //         let amount_pets = read_db().expect("can fetch pet list").len();
-                //         if selected > 0 {
-                //             pet_list_state.select(Some(selected - 1));
-                //         } else {
-                //             pet_list_state.select(Some(amount_pets - 1));
-                //         }
-                //     }
-                // }
+                KeyCode::Char('j') => {
+                    if let Some(selected) = todo_list_state.selected() {
+                        let amount_todos = read_db().expect("can fetch todo list").len();
+                        if selected >= amount_todos - 1 {
+                            todo_list_state.select(Some(0));
+                        } else {
+                            todo_list_state.select(Some(selected + 1));
+                        }
+                    }
+                }
+                KeyCode::Char('k') => {
+                    if let Some(selected) = todo_list_state.selected() {
+                        let amount_todos = read_db().expect("can fetch todo list").len();
+                        if selected > 0 {
+                            todo_list_state.select(Some(selected - 1));
+                        } else {
+                            todo_list_state.select(Some(amount_todos - 1));
+                        }
+                    }
+                }
                 _ => {}
             },
             Event::Tick => {}
@@ -376,92 +386,93 @@ fn render_home<'a>() -> Paragraph<'a> {
 // (list, pet_detail)
 // }
 
-// fn render_pets<'a>(pet_list_state: &ListState) -> (List<'a>, Table<'a>) {
-//     let pets = Block::default()
-//         .borders(Borders::ALL)
-//         .style(Style::default().fg(Color::White))
-//         .title("Pets")
-//         .border_type(BorderType::Plain);
-//
-//     let pet_list = read_db().expect("can fetch pet list");
-//     let items: Vec<_> = pet_list
-//         .iter()
-//         .map(|pet| {
-//             ListItem::new(Spans::from(vec![Span::styled(
-//                 pet.name.clone(),
-//                 Style::default(),
-//             )]))
-//         })
-//         .collect();
-//
-//     let selected_pet = pet_list
-//         .get(
-//             pet_list_state
-//                 .selected()
-//                 .expect("there is always a selected pet"),
-//         )
-//         .expect("exists")
-//         .clone();
-//
-//     let list = List::new(items).block(pets).highlight_style(
-//         Style::default()
-//             .bg(Color::Yellow)
-//             .fg(Color::Black)
-//             .add_modifier(Modifier::BOLD),
-//     );
-//
-//     let pet_detail = Table::new(vec![Row::new(vec![
-//         Cell::from(Span::raw(selected_pet.id.to_string())),
-//         Cell::from(Span::raw(selected_pet.name)),
-//         Cell::from(Span::raw(selected_pet.category)),
-//         Cell::from(Span::raw(selected_pet.age.to_string())),
-//         Cell::from(Span::raw(selected_pet.created_at.to_string())),
-//     ])])
-//     .header(Row::new(vec![
-//         Cell::from(Span::styled(
-//             "ID",
-//             Style::default().add_modifier(Modifier::BOLD),
-//         )),
-//         Cell::from(Span::styled(
-//             "Name",
-//             Style::default().add_modifier(Modifier::BOLD),
-//         )),
-//         Cell::from(Span::styled(
-//             "Category",
-//             Style::default().add_modifier(Modifier::BOLD),
-//         )),
-//         Cell::from(Span::styled(
-//             "Age",
-//             Style::default().add_modifier(Modifier::BOLD),
-//         )),
-//         Cell::from(Span::styled(
-//             "Created At",
-//             Style::default().add_modifier(Modifier::BOLD),
-//         )),
-//     ]))
-//     .block(
-//         Block::default()
-//             .borders(Borders::ALL)
-//             .style(Style::default().fg(Color::White))
-//             .title("Detail")
-//             .border_type(BorderType::Plain),
-//     )
-//     .widths(&[
-//         Constraint::Percentage(5),
-//         Constraint::Percentage(20),
-//         Constraint::Percentage(20),
-//         Constraint::Percentage(5),
-//         Constraint::Percentage(20),
-//     ]);
-//
-//     (list, pet_detail)
-// }
+fn render_todos<'a>(todo_list_state: &ListState) -> (List<'a>, Table<'a>) {
+    let todos = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default().fg(Color::White))
+        .title("ToDos")
+        .border_type(BorderType::Plain);
 
-// fn read_db() -> Result<Vec<Pet>, Error> {
-//     let db_content = fs::read_to_string(DB_PATH)?;
-//     let parsed: Vec<Pet> = serde_json::from_str(&db_content)?;
-//     Ok(parsed)
-// }
+    let todo_list = read_db().expect("can fetch todo list");
+    let items: Vec<_> = todo_list
+        .iter()
+        .map(|todo| {
+            ListItem::new(Spans::from(vec![Span::styled(
+                todo.title.clone(),
+                Style::default(),
+            )]))
+        })
+        .collect();
+
+    let selected_todo = todo_list
+        .get(
+            todo_list_state
+                .selected()
+                .expect("there is always a selected todo"),
+        )
+        .expect("exists")
+        .clone();
+
+    let list = List::new(items).block(todos).highlight_style(
+        Style::default()
+            .bg(Color::Yellow)
+            .fg(Color::Black)
+            .add_modifier(Modifier::BOLD),
+    );
+
+    let todo_detail = Table::new(vec![Row::new(vec![
+        Cell::from(Span::raw(selected_todo.id.to_string())),
+        Cell::from(Span::raw(selected_todo.title)),
+        Cell::from(Span::raw(selected_todo.description)),
+        Cell::from(Span::raw(selected_todo.category)),
+        Cell::from(Span::raw(selected_todo.created_at.to_string())),
+    ])])
+    .header(Row::new(vec![
+        Cell::from(Span::styled(
+            "ID",
+            Style::default().add_modifier(Modifier::BOLD),
+        )),
+        Cell::from(Span::styled(
+            "Title",
+            Style::default().add_modifier(Modifier::BOLD),
+        )),
+        Cell::from(Span::styled(
+            "Description",
+            Style::default().add_modifier(Modifier::BOLD),
+        )),
+        Cell::from(Span::styled(
+            "Category",
+            Style::default().add_modifier(Modifier::BOLD),
+        )),
+        Cell::from(Span::styled(
+            "Created At",
+            Style::default().add_modifier(Modifier::BOLD),
+        )),
+    ]))
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .style(Style::default().fg(Color::White))
+            .title("Detail")
+            .border_type(BorderType::Plain),
+    )
+    .widths(&[
+        Constraint::Percentage(5),  // id
+        Constraint::Percentage(20), // title
+        Constraint::Percentage(20), // description
+        Constraint::Percentage(20), // category
+        // Constraint::Percentage(5), // age
+        Constraint::Percentage(20), // date
+    ]);
+
+    (list, todo_detail)
+}
+
+fn read_db() -> Result<Vec<Todo>, Error> {
+    let db_content = fs::read_to_string(DB_PATH)?;
+    let parsed: Vec<Todo> = serde_json::from_str(&db_content)?;
+    Ok(parsed)
+}
 
 // fn add_random_pet_to_db() -> Result<Vec<Pet>, Error> {
 //     let mut rng = rand::thread_rng();
