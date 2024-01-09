@@ -64,7 +64,7 @@ enum MenuItem {
     TimeTracking,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
 enum TodoStatus {
     Todo,
     Done,
@@ -207,14 +207,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 MenuItem::Home => rect.render_widget(render_home(), chunks[1]),
                 MenuItem::Todos => {
                     let todos_chunks = Layout::default()
-                        .direction(Direction::Horizontal)
+                        .direction(Direction::Vertical)
                         .constraints(
                             [Constraint::Percentage(20), Constraint::Percentage(80)].as_ref(),
                         )
                         .split(chunks[1]);
-                    let (left, right) = render_todos(&todo_list_state);
-                    rect.render_stateful_widget(left, todos_chunks[0], &mut todo_list_state);
-                    rect.render_widget(right, todos_chunks[1]);
+                    let (todo_list, doing_list, done_list, details_table) =
+                        render_todos(&todo_list_state);
+                    rect.render_stateful_widget(todo_list, todos_chunks[0], &mut todo_list_state);
+                    rect.render_widget(details_table, todos_chunks[1]);
                 }
                 MenuItem::Timers => {
                     // let pets_chunks = Layout::default()
@@ -386,16 +387,52 @@ fn render_home<'a>() -> Paragraph<'a> {
 // (list, pet_detail)
 // }
 
-fn render_todos<'a>(todo_list_state: &ListState) -> (List<'a>, Table<'a>) {
-    let todos = Block::default()
+fn render_todos<'a>(todo_list_state: &ListState) -> (List<'a>, List<'a>, List<'a>, Table<'a>) {
+    let todos_block = Block::default()
         .borders(Borders::ALL)
         .style(Style::default().fg(Color::White))
-        .title("ToDos")
+        .title("ToDo")
+        .border_type(BorderType::Plain);
+
+    let doing_block = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default().fg(Color::White))
+        .title("Doing")
+        .border_type(BorderType::Plain);
+
+    let done_block = Block::default()
+        .borders(Borders::ALL)
+        .style(Style::default().fg(Color::White))
+        .title("Done")
         .border_type(BorderType::Plain);
 
     let todo_list = read_db().expect("can fetch todo list");
-    let items: Vec<_> = todo_list
+
+    let items_todo: Vec<_> = todo_list
         .iter()
+        .filter(|todo| todo.status == TodoStatus::Todo)
+        .map(|todo| {
+            ListItem::new(Spans::from(vec![Span::styled(
+                todo.title.clone(),
+                Style::default(),
+            )]))
+        })
+        .collect();
+
+    let items_doing: Vec<_> = todo_list
+        .iter()
+        .filter(|todo| todo.status == TodoStatus::Doing)
+        .map(|todo| {
+            ListItem::new(Spans::from(vec![Span::styled(
+                todo.title.clone(),
+                Style::default(),
+            )]))
+        })
+        .collect();
+
+    let items_done: Vec<_> = todo_list
+        .iter()
+        .filter(|todo| todo.status == TodoStatus::Done)
         .map(|todo| {
             ListItem::new(Spans::from(vec![Span::styled(
                 todo.title.clone(),
@@ -413,7 +450,19 @@ fn render_todos<'a>(todo_list_state: &ListState) -> (List<'a>, Table<'a>) {
         .expect("exists")
         .clone();
 
-    let list = List::new(items).block(todos).highlight_style(
+    let list_todo = List::new(items_todo).block(todos_block).highlight_style(
+        Style::default()
+            .bg(Color::Yellow)
+            .fg(Color::Black)
+            .add_modifier(Modifier::BOLD),
+    );
+    let list_doing = List::new(items_doing).block(doing_block).highlight_style(
+        Style::default()
+            .bg(Color::Yellow)
+            .fg(Color::Black)
+            .add_modifier(Modifier::BOLD),
+    );
+    let list_done = List::new(items_done).block(done_block).highlight_style(
         Style::default()
             .bg(Color::Yellow)
             .fg(Color::Black)
@@ -465,7 +514,7 @@ fn render_todos<'a>(todo_list_state: &ListState) -> (List<'a>, Table<'a>) {
         Constraint::Percentage(20), // date
     ]);
 
-    (list, todo_detail)
+    (list_todo, list_doing, list_done, todo_detail)
 }
 
 fn read_db() -> Result<Vec<Todo>, Error> {
