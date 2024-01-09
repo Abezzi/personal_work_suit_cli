@@ -206,9 +206,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             match active_menu_item {
                 MenuItem::Home => rect.render_widget(render_home(), chunks[1]),
                 MenuItem::Todos => {
-                    // chunk 0 vertical layout{
-                    //    horizontal layout
-                    // }
                     let todos_vertical_chunks = Layout::default()
                         .direction(Direction::Vertical)
                         .constraints(
@@ -251,17 +248,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
                     rect.render_widget(details_table, todos_vertical_chunks[1]);
                 }
-                MenuItem::Timers => {
-                    // let pets_chunks = Layout::default()
-                    //     .direction(Direction::Horizontal)
-                    //     .constraints(
-                    //         [Constraint::Percentage(20), Constraint::Percentage(80)].as_ref(),
-                    //     )
-                    //     .split(chunks[1]);
-                    // let (left, right) = render_timers(&pet_list_state);
-                    // rect.render_stateful_widget(left, pets_chunks[0], &mut pet_list_state);
-                    // rect.render_widget(right, pets_chunks[1]);
-                }
+                MenuItem::Timers => {}
                 MenuItem::TimeTracking => {}
             }
             rect.render_widget(copyright, chunks[2]);
